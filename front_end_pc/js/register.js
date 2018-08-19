@@ -19,6 +19,20 @@ var vm = new Vue({
 		image_code_id: '',  // 图片验证码编号
     	image_code_url: '',  // 验证码图片路径
 	},
+	mounted: function(){
+		// 请求图片验证码
+		this.image_code_id = this.generate_uuid();
+	// 	axios.get("http://127.0.0.1/image_codes/" + this.image_code_id + "/")
+	// 		.then(response => {
+    //
+	// 		})
+	// 		.catch(error =>{
+    //
+	// 		})
+		this.image_code_url = "http://127.0.0.1:8000/image_codes/" + this.image_code_id + "/"
+	},
+
+
 	methods: {
 		check_username: function (){
 			var len = this.username.length;
