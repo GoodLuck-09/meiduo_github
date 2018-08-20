@@ -11,6 +11,7 @@ from . import serializers
 import random
 from meiduo_mall.libs.yuntongxun.sms import CCP
 from rest_framework.response import Response
+from celery_tasks.sms.tasks import send_sms_code
 
 
 class ImageCodeView(APIView):
@@ -60,6 +61,9 @@ class SMSCodeView(GenericAPIView):
 
         # sms_time = str(constants.SMS_CODE_REDIS_EXPIRES / 60)
         # ccp.send_template_sms(mobile, [sms_code, sms_time], constants.SMS_CODE_TEMPLATE_ID)
+
+        # 使用celery异步实现
+        send_sms_code.delay(mobile, sms_code)
 
         return Response({'message': 'ok'})
 

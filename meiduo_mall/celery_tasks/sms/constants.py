@@ -1,0 +1,11 @@
+# 图片验证码的有效期
+IMAGE_CODE_REDIS_EXPIRES = 300
+
+# 短信验证码的有效期
+SMS_CODE_REDIS_EXPIRES= 300
+
+# 短信验证码的发送间隔时间
+SMS_SEND_INTERVAL = 60
+
+# 短信验证码模版编号
+SMS_CODE_TEMPLATE_ID = 1

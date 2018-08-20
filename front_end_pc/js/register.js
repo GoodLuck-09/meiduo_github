@@ -16,34 +16,78 @@ var vm = new Vue({
 		image_code: '',
 		sms_code: '',
 		allow: false,
-		image_code_id: '',  // 图片验证码编号
-    	image_code_url: '',  // 验证码图片路径
-		sending_flag: false,   // 防止频繁点击发送短信
-		error_image_code_message: '请填写图片验证码', // 错误的信息内容
+
+		image_code_id: '',
+		image_code_url: '',
+		sending_flag: false,
 		sms_code_tip: '获取短信验证码',
 
+		error_image_code_message: '请填写图片验证码',
+		error_sms_code_message: '请填写短信验证码',
+		error_phone_message: '您输入的手机号格式不正确',
+		error_name_message: '请输入5-20个字符的用户'
 	},
 	mounted: function(){
-		// 请求图片验证码
-		this.image_code_id = this.generate_uuid();
-	// 	axios.get("http://127.0.0.1/image_codes/" + this.image_code_id + "/")
-	// 		.then(response => {
-    //
-	// 		})
-	// 		.catch(error =>{
-    //
-	// 		})
-		this.image_code_url = "http://127.0.0.1:8000/image_codes/" + this.image_code_id + "/"
+		// this.image_code_id = this.generate_uuid();
+		// // 发起请求，请求图片验证码
+		// // axios.get("http://127.0.0.1:8000/image_codes/"+ this.image_code_id+"/")
+		// // 	.then(response => {
+		// //
+		// // 	})
+		// // 	.catch(error => {
+        // //
+		// // 	})
+		// this.image_code_url = "http://127.0.0.1:8000/image_codes/"+ this.image_code_id+"/";
+		this.generate_image_code();
+
 	},
-
-
 	methods: {
+		// 生成uuid
+		generate_uuid: function(){
+			var d = new Date().getTime();
+			if(window.performance && typeof window.performance.now === "function"){
+				d += performance.now(); //use high-precision timer if available
+			}
+			var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+				var r = (d + Math.random()*16)%16 | 0;
+				d = Math.floor(d/16);
+				return (c =='x' ? r : (r&0x3|0x8)).toString(16);
+			});
+			return uuid;
+		},
+		// 生成一个图片验证码的编号，并设置页面中图片验证码img标签的src属性
+		generate_image_code: function(){
+			// 生成一个编号
+			// 严格一点的使用uuid保证编号唯一， 不是很严谨的情况下，也可以使用时间戳
+			this.image_code_id = this.generate_uuid();
+
+			// 设置页面中图片验证码img标签的src属性
+			this.image_code_url = 'http://127.0.0.1:8000' + "/image_codes/" + this.image_code_id + "/";
+		},
 		check_username: function (){
 			var len = this.username.length;
 			if(len<5||len>20) {
 				this.error_name = true;
 			} else {
+                this.error_name_message = '请输入5-20个字符的用户名';
 				this.error_name = false;
+			}
+			// 检查重名
+			if (this.error_name == false) {
+				axios.get('http://127.0.0.1:8000/usernames/' + this.username + '/count/', {
+						responseType: 'json'
+					})
+					.then(response => {
+						if (response.data.count > 0) {
+							this.error_name_message = '用户名已存在';
+							this.error_name = true;
+						} else {
+							this.error_name = false;
+						}
+					})
+					.catch(error => {
+						console.log(error.response.data);
+					})
 			}
 		},
 		check_pwd: function (){
@@ -66,7 +110,24 @@ var vm = new Vue({
 			if(re.test(this.mobile)) {
 				this.error_phone = false;
 			} else {
+                this.error_phone_message = '您输入的手机号格式不正确';
 				this.error_phone = true;
+			}
+			if (this.error_phone == false) {
+				axios.get('http://127.0.0.1:8000/mobiles/'+ this.mobile + '/count/', {
+						responseType: 'json'
+					})
+					.then(response => {
+						if (response.data.count > 0) {
+							this.error_phone_message = '手机号已存在';
+							this.error_phone = true;
+						} else {
+							this.error_phone = false;
+						}
+					})
+					.catch(error => {
+						console.log(error.response.data);
+					})
 			}
 		},
 		check_image_code: function (){
@@ -90,29 +151,6 @@ var vm = new Vue({
 				this.error_allow = false;
 			}
 		},
-		// 生成uuid
-    	generate_uuid: function(){
-			var d = new Date().getTime();
-			if(window.performance && typeof window.performance.now === "function"){
-				d += performance.now(); //use high-precision timer if available
-			}
-			var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-				var r = (d + Math.random()*16)%16 | 0;
-				d = Math.floor(d/16);
-				return (c =='x' ? r : (r&0x3|0x8)).toString(16);
-			});
-			return uuid;
-    	},
-    	// 生成一个图片验证码的编号，并设置页面中图片验证码img标签的src属性
-    	generate_image_code: function(){
-        	// 生成一个编号
-        	// 严格一点的使用uuid保证编号唯一， 不是很严谨的情况下，也可以使用时间戳
-        	this.image_code_id = this.generate_uuid();
-
-        	// 设置页面中图片验证码img标签的src属性
-        	this.image_code_url = 'http://127.0.0.1:8000' + "/image_codes/" + this.image_code_id + "/";
-    	},
-
 		// 注册
 		on_submit: function(){
 			this.check_username();
@@ -121,13 +159,37 @@ var vm = new Vue({
 			this.check_phone();
 			this.check_sms_code();
 			this.check_allow();
-		},
 
+
+			if(this.error_name == false && this.error_password == false && this.error_check_password == false
+				&& this.error_phone == false && this.error_sms_code == false && this.error_allow == false) {
+				axios.post('http://127.0.0.1:8000/users/', {
+						username: this.username,
+						password: this.password,
+						password2: this.password2,
+						mobile: this.mobile,
+						sms_code: this.sms_code,
+						allow: this.allow.toString()
+					}, {
+						responseType: 'json'
+					})
+					.then(response => {
+						location.href = '/index.html';
+					})
+					.catch(error=> {
+						if (error.response.status == 400) {
+							this.error_sms_code_message = '短信验证码错误';
+							this.error_sms_code = true;
+						} else {
+							console.log(error.response.data);
+						}
+					})
+			}
+		},
 		// 发送短信验证码
 		send_sms_code: function () {
 			if (this.sending_flag == true) {
 				return;
-
 			}
 			this.sending_flag = true;
 
@@ -178,3 +240,13 @@ var vm = new Vue({
 
 	}
 });
+
+
+
+
+
+
+
+
+
+
